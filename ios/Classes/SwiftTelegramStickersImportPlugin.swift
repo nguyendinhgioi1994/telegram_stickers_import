@@ -25,40 +25,38 @@ public class SwiftTelegramStickersImportPlugin: NSObject, FlutterPlugin {
             let isAnimated = args["isAnimated"] as! Bool
             let rawStickers = args["stickers"] as! [Dictionary<String, Any?>]
             
-            
-            let stickerSet = StickerSet(software: software, isAnimated: isAnimated)
+            let stickerSetType: StickerSet.StickerSetType = isAnimated ? .animated : .static
+            let stickerSet = StickerSet(software: software, type: stickerSetType)
             
             for sticker in rawStickers {
                 let data = convertStickerData(input: sticker["data"] as! Dictionary<String, Any?>)
                 let emojis = sticker["emojis"] as! [String]
-                try stickerSet.addSticker(data: isAnimated == true ? .animation(data) : .image(data), emojis: emojis)
+                try stickerSet.addSticker(data: stickerSetType == .animated ? .animation(data) : .image(data), emojis: emojis)
             }
             
-            if(args["thumbnail"]!==nil){
-                let thumbnail = args["thumbnail"] as! Dictionary<String, Any?>
+            if let thumbnail = args["thumbnail"] as? Dictionary<String, Any?> {
                 let data = convertStickerData(input: thumbnail["data"] as! Dictionary<String, Any?>)
-                try stickerSet.setThumbnail(data:.image(data))
+                try stickerSet.setThumbnail(data: .image(data))
             }
             
             try stickerSet.import()
-        } catch(StickersError.fileTooBig) {
-            result(FlutterError(code: "1", message: "error while import", details: "fileTooBig"))
-            return
-        } catch(StickersError.invalidDimensions) {
-            result(FlutterError(code: "2", message: "error while import", details: "invalidDimensions"))
-            return
-        } catch(StickersError.countLimitExceeded) {
-            result(FlutterError(code: "3", message: "error while import", details: "countLimitExceeded"))
-            return
-        } catch(StickersError.dataTypeMismatch) {
-            result(FlutterError(code: "4", message: "error while import", details: "dataTypeMismatch"))
-            return
-        } catch(StickersError.setIsEmpty) {
-            result(FlutterError(code: "5", message: "error while import", details: "setIsEmpty"))
-            return
+        } catch let error as StickersError {
+            var errorCode: String
+            switch error {
+                case .fileTooBig:
+                    errorCode = "1"
+                case .invalidDimensions:
+                    errorCode = "2"
+                case .countLimitExceeded:
+                    errorCode = "3"
+                case .dataTypeMismatch:
+                    errorCode = "4"
+                case .setIsEmpty:
+                    errorCode = "5"
+            }
+            result(FlutterError(code: errorCode, message: "error while import", details: error.localizedDescription))
         } catch {
-            result(FlutterError(code: "6", message: "error while import", details: "unknown"))
-            return
+            result(FlutterError(code: "6", message: "error while import", details: error.localizedDescription))
         }
         result("success")
     }
