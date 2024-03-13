@@ -25,13 +25,13 @@ public class SwiftTelegramStickersImportPlugin: NSObject, FlutterPlugin {
             let isAnimated = args["isAnimated"] as! Bool
             let rawStickers = args["stickers"] as! [Dictionary<String, Any?>]
             
-            let stickerSetType: StickerSet.StickerSetType = isAnimated ? .animated : .static
+            let stickerSetType: StickerSet.StickerSetType = isAnimated ? .animation : .image
             let stickerSet = StickerSet(software: software, type: stickerSetType)
             
             for sticker in rawStickers {
                 let data = convertStickerData(input: sticker["data"] as! Dictionary<String, Any?>)
                 let emojis = sticker["emojis"] as! [String]
-                try stickerSet.addSticker(data: stickerSetType == .animated ? .animation(data) : .image(data), emojis: emojis)
+                try stickerSet.addSticker(data: isAnimated ? .animation(data) : .image(data), emojis: emojis)
             }
             
             if let thumbnail = args["thumbnail"] as? Dictionary<String, Any?> {
